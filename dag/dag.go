@@ -1,10 +1,39 @@
 package dag
 
+import (
+	"errors"
+)
+
+func TopologicalSort(graph map[string][]string) ([][]string, error) {
+	sccSlice := connections(graph)
+	isDAG := assertDAG(sccSlice, len(graph))
+
+	if !isDAG {
+		return make([][]string, 0), errors.New("Cyclic dependency detected!")
+	}
+
+	return sccSlice, nil
+}
+
+func assertDAG(sccSlice [][]string, nodeCount int) bool {
+	if len(sccSlice) != nodeCount {
+		return false
+	}
+
+	for _, scc := range sccSlice {
+		if len(scc) != 1 {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Connections creates a slice where each item is a slice of strongly connected vertices.
 //
 // If a slice item contains only one vertex there are no loops. A loop on the
 // vertex itself is also a connected group.
-func Connections(graph map[string][]string) [][]string {
+func connections(graph map[string][]string) [][]string {
 	g := &data{
 		graph: graph,
 		nodes: make([]node, 0, len(graph)),

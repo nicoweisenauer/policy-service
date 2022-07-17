@@ -9,13 +9,19 @@ import (
 
 func ProcessPolicy(policy []byte) ([]byte, error) {
 	var rules RuleSet
-	error := json.Unmarshal(policy, &rules)
+	err := json.Unmarshal(policy, &rules)
 
-	if error != nil {
-		log.Fatal(error)
+	if err != nil {
+		log.Println(err)
+		return make([]byte, 0), err
 	}
 
-	rules = sortRules(rules)
+	rules, err = sortRules(rules)
+
+	if err != nil {
+		log.Println(err)
+		return make([]byte, 0), err
+	}
 
 	responseRules := make([]Rule, len(rules.Rules))
 
@@ -27,16 +33,16 @@ func ProcessPolicy(policy []byte) ([]byte, error) {
 		}
 	}
 
-	result, error := json.Marshal(responseRules)
+	result, err := json.MarshalIndent(responseRules, "", "    ")
 
-	if error != nil {
-		log.Fatal(error)
+	if err != nil {
+		log.Println(err)
 	}
 
-	return result, error
+	return result, err
 }
 
-func sortRules(rules RuleSet) RuleSet {
+func sortRules(rules RuleSet) (RuleSet, error) {
 	graph := make(map[string][]string, len(rules.Rules))
 
 	for _, rule := range rules.Rules {
@@ -46,11 +52,15 @@ func sortRules(rules RuleSet) RuleSet {
 		}
 	}
 
-	result := dag.Connections(graph)
+	result, err := dag.TopologicalSort(graph)
+	resultRules := RuleSet{}
+
+	if err != nil {
+		log.Println(err)
+		return resultRules, err
+	}
 
 	fmt.Println(result)
-
-	resultRules := RuleSet{}
 
 	for _, ruleIdSlice := range result {
 		for _, rule := range rules.Rules {
@@ -60,5 +70,5 @@ func sortRules(rules RuleSet) RuleSet {
 		}
 	}
 
-	return resultRules
+	return resultRules, nil
 }
