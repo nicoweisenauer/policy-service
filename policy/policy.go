@@ -16,23 +16,14 @@ func ProcessPolicy(policy []byte) ([]byte, error) {
 		return make([]byte, 0), err
 	}
 
-	rules, err = sortRules(rules)
+	sortedRuleIds, err := sortRuleIds(rules)
 
 	if err != nil {
 		log.Println(err)
 		return make([]byte, 0), err
 	}
 
-	responseRules := make([]Rule, len(rules.Rules))
-
-	for i, r := range rules.Rules {
-		responseRules[i] = Rule{
-			Id:   r.Id,
-			Head: r.Head,
-			Body: r.Body,
-		}
-	}
-
+	responseRules := convertToResponseRuleFormat(sortedRuleIds, rules)
 	result, err := json.MarshalIndent(responseRules, "", "    ")
 
 	if err != nil {
@@ -42,7 +33,26 @@ func ProcessPolicy(policy []byte) ([]byte, error) {
 	return result, err
 }
 
-func sortRules(rules RuleSet) (RuleSet, error) {
+func sortRuleIds(rules RuleSet) ([]string, error) {
+	graph := convertRuleSetToGraphRepresentation(rules)
+	result, err := dag.TopologicalSort(graph)
+	sortedRuleIds := make([]string, 0)
+
+	if err != nil {
+		log.Println(err)
+		return sortedRuleIds, err
+	}
+
+	fmt.Println(result)
+
+	for _, ruleIdSlice := range result {
+		sortedRuleIds = append(sortedRuleIds, ruleIdSlice[0])
+	}
+
+	return sortedRuleIds, nil
+}
+
+func convertRuleSetToGraphRepresentation(rules RuleSet) map[string][]string {
 	graph := make(map[string][]string, len(rules.Rules))
 
 	for _, rule := range rules.Rules {
@@ -52,23 +62,23 @@ func sortRules(rules RuleSet) (RuleSet, error) {
 		}
 	}
 
-	result, err := dag.TopologicalSort(graph)
-	resultRules := RuleSet{}
+	return graph
+}
 
-	if err != nil {
-		log.Println(err)
-		return resultRules, err
-	}
+func convertToResponseRuleFormat(sortedRuleIds []string, rules RuleSet) []ResultRule {
+	responseRules := make([]ResultRule, len(sortedRuleIds))
 
-	fmt.Println(result)
-
-	for _, ruleIdSlice := range result {
+	for i, ruleId := range sortedRuleIds {
 		for _, rule := range rules.Rules {
-			if rule.Id == ruleIdSlice[0] {
-				resultRules.Rules = append(resultRules.Rules, rule)
+			if rule.Id == ruleId {
+				responseRules[i] = ResultRule{
+					Id:   rule.Id,
+					Head: rule.Head,
+					Body: rule.Body,
+				}
 			}
 		}
 	}
 
-	return resultRules, nil
+	return responseRules
 }

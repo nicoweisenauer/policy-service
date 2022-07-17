@@ -53,7 +53,7 @@ func TestProcessPolicyReturnsAllRules(t *testing.T) {
 		t.Fatalf(`TestMainReturnsAllRules: %q, %v, no valid JSON`, result, err)
 	}
 
-	var rules []Rule
+	var rules []ResultRule
 	err = json.Unmarshal(result, &rules)
 
 	for _, id := range []string{"rule-1", "rule-2", "rule-3", "rule-4"} {
@@ -104,10 +104,10 @@ func TestProcessPolicySortsRules(t *testing.T) {
 		t.Fatalf(`TestMainReturnsAllRules: %q, %v, no valid JSON`, result, err)
 	}
 
-	var expectedRules []Rule
+	var expectedRules []ResultRule
 	err = json.Unmarshal(expected, &expectedRules)
 
-	var resultRules []Rule
+	var resultRules []ResultRule
 	err = json.Unmarshal(result, &resultRules)
 	if (len(resultRules) != 4) || err != nil {
 		t.Fatalf(`TestProcessPolicySortsRules: result length is not correct`)
@@ -124,4 +124,34 @@ func TestProcessPolicySortsRules(t *testing.T) {
 	if !(expectedRules[3] == resultRules[3]) {
 		t.Fatalf(`TestProcessPolicySortsRules: %q, want match for %#q`, expectedRules[3], resultRules[4])
 	}
+}
+
+func TestProcessPolicyDetectsCyclicDependencies(t *testing.T) {
+	cyclicRequest := []byte(`
+	{
+		"rules": [
+			{
+				"id": "rule-1",
+				"requires": [
+					"rule-2"
+				]
+			},
+			{
+				"id": "rule-2",
+				"requires": [
+					"rule-1"
+				]
+			}
+		]
+	}`)
+
+	result, err := ProcessPolicy(cyclicRequest)
+
+	if len(result) != 0 {
+		t.Fatalf(`TestProcessPolicySortsRules: result should be empty, but is %q`, string(result))
+	}
+	if !(err.Error() == "Cyclic dependency detected!") {
+		t.Fatalf(`TestProcessPolicySortsRules: should return error about cyclic dependency`)
+	}
+
 }

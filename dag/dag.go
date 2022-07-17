@@ -5,7 +5,7 @@ import (
 )
 
 func TopologicalSort(graph map[string][]string) ([][]string, error) {
-	sccSlice := connections(graph)
+	sccSlice := tarjans(graph)
 	isDAG := assertDAG(sccSlice, len(graph))
 
 	if !isDAG {
@@ -29,25 +29,23 @@ func assertDAG(sccSlice [][]string, nodeCount int) bool {
 	return true
 }
 
-// Connections creates a slice where each item is a slice of strongly connected vertices.
-//
-// If a slice item contains only one vertex there are no loops. A loop on the
-// vertex itself is also a connected group.
-func connections(graph map[string][]string) [][]string {
-	g := &data{
+// Connections creates a slice where each item is a slice of strongly connected nodes
+// If a slice item contains only one node there are no cycles. A cycle on the node itself is also a connected group.
+func tarjans(graph map[string][]string) [][]string {
+	context := &data{
 		graph: graph,
 		nodes: make([]node, 0, len(graph)),
 		index: make(map[string]int, len(graph)),
 	}
-	for v := range g.graph {
-		if _, ok := g.index[v]; !ok {
-			g.strongConnect(v)
+	for node := range context.graph {
+		if _, alreadyVisited := context.index[node]; !alreadyVisited {
+			context.strongConnect(node)
 		}
 	}
-	return g.output
+	return context.output
 }
 
-// data contains all common data for a single operation.
+// data contains the context of the algorithm
 type data struct {
 	graph  map[string][]string
 	nodes  []node
@@ -56,14 +54,13 @@ type data struct {
 	output [][]string
 }
 
-// node stores data for a single vertex in the connection process.
+// node stores data for a single node in the connection process
 type node struct {
 	lowlink int
 	stacked bool
 }
 
-// strongConnect runs Tarjan's algorithm recursively and outputs a grouping of
-// strongly connected vertices.
+// strongConnect runs Tarjan's algorithm recursively and outputs a grouping of strongly connected nodes
 func (data *data) strongConnect(currentNode string) *node {
 	index := len(data.nodes)
 	data.index[currentNode] = index
@@ -86,20 +83,20 @@ func (data *data) strongConnect(currentNode string) *node {
 	}
 
 	if node.lowlink == index {
-		var vertices []string
+		var nodes []string
 		i := len(data.stack) - 1
 		for {
-			w := data.stack[i]
-			stackIndex := data.index[w]
+			stronglyConnectedNode := data.stack[i]
+			stackIndex := data.index[stronglyConnectedNode]
 			data.nodes[stackIndex].stacked = false
-			vertices = append(vertices, w)
+			nodes = append(nodes, stronglyConnectedNode)
 			if stackIndex == index {
 				break
 			}
 			i--
 		}
 		data.stack = data.stack[:i]
-		data.output = append(data.output, vertices)
+		data.output = append(data.output, nodes)
 	}
 
 	return node
