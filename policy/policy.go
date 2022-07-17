@@ -90,15 +90,6 @@ func ProcessPolicy(policy []byte) ([]byte, error) {
 	return result, error
 }
 
-// func findRuleWithId(rules RuleSet, id string) string {
-// 	for _, r := range rules.Rules {
-// 		if r.Id == id {
-// 			return r
-// 		}
-// 	}
-// 	return nil
-// }
-
 func sortRules(rules RuleSet) RuleSet {
 	graph := make(map[string][]string, len(rules.Rules))
 
@@ -111,9 +102,7 @@ func sortRules(rules RuleSet) RuleSet {
 
 	result := dag.Connections(graph)
 
-	if len(result) != 1 {
-		fmt.Println(result)
-	}
+	fmt.Println(result)
 
 	resultRules := RuleSet{}
 
