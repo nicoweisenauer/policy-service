@@ -11,7 +11,9 @@ type Rule struct {
 	Requires []string `json:"requires"`
 }
 
-type ResultRule struct {
+type Policy []PolicyRule
+
+type PolicyRule struct {
 	Id   string `json:"id,omitempty"`
 	Head string `json:"head,omitempty"`
 	Body string `json:"body,omitempty"`

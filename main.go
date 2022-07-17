@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"nweisenauer/policy"
@@ -13,9 +12,8 @@ func main() {
 }
 
 func policyService(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: policyService")
 	requestBody, _ := io.ReadAll(r.Body)
-	returnPolicy, err := policy.ProcessPolicy(requestBody)
+	returnPolicy, err := policy.BuildPolicy(requestBody)
 	if err != nil {
 		w.Write([]byte(err.Error()))
 	}

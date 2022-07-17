@@ -4,6 +4,23 @@ import (
 	"errors"
 )
 
+type Graph map[string][]string
+
+// data contains the context of the algorithm
+type data struct {
+	graph  map[string][]string
+	nodes  []node
+	stack  []string
+	index  map[string]int
+	output [][]string
+}
+
+// node stores data for a single node in the connection process
+type node struct {
+	lowlink int
+	stacked bool
+}
+
 // a topological ordering represents a valid sequence for tasks (nodes) which depend on each other (edges between nodes)
 func TopologicalSort(graph map[string][]string) ([][]string, error) {
 	sccSlice := tarjans(graph)
@@ -48,21 +65,6 @@ func tarjans(graph map[string][]string) [][]string {
 	return context.output
 }
 
-// data contains the context of the algorithm
-type data struct {
-	graph  map[string][]string
-	nodes  []node
-	stack  []string
-	index  map[string]int
-	output [][]string
-}
-
-// node stores data for a single node in the connection process
-type node struct {
-	lowlink int
-	stacked bool
-}
-
 // strongConnect runs recursively and outputs a grouping of strongly connected nodes
 func (data *data) strongConnect(currentNode string) *node {
 	index := len(data.nodes)
@@ -72,35 +74,46 @@ func (data *data) strongConnect(currentNode string) *node {
 	node := &data.nodes[index]
 
 	for _, successorNode := range data.graph[currentNode] {
-		i, seen := data.index[successorNode]
-		if !seen {
-			n := data.strongConnect(successorNode)
-			if n.lowlink < node.lowlink {
-				node.lowlink = n.lowlink
-			}
-		} else if data.nodes[i].stacked {
-			if i < node.lowlink {
-				node.lowlink = i
-			}
-		}
+		inspectSuccessorNodeAndUpdateLowlink(data, successorNode, node)
 	}
 
+	// node is the root of a strongly connected component
 	if node.lowlink == index {
-		var nodes []string
-		i := len(data.stack) - 1
-		for {
-			stronglyConnectedNode := data.stack[i]
-			stackIndex := data.index[stronglyConnectedNode]
-			data.nodes[stackIndex].stacked = false
-			nodes = append(nodes, stronglyConnectedNode)
-			if stackIndex == index {
-				break
-			}
-			i--
-		}
-		data.stack = data.stack[:i]
-		data.output = append(data.output, nodes)
+		buildSCCFromStack(data, index)
 	}
 
 	return node
+}
+
+// update lowlink and recurse on the successorNode if it has not already been visited
+func inspectSuccessorNodeAndUpdateLowlink(data *data, successorNode string, node *node) {
+	i, alreadyVisited := data.index[successorNode]
+	if !alreadyVisited {
+		n := data.strongConnect(successorNode)
+		if n.lowlink < node.lowlink {
+			node.lowlink = n.lowlink
+		}
+	} else if data.nodes[i].stacked {
+		if i < node.lowlink {
+			node.lowlink = i
+		}
+	}
+}
+
+// pops nodes from stack which form a strongly connected component
+func buildSCCFromStack(data *data, index int) {
+	var nodes []string
+	i := len(data.stack) - 1
+	for {
+		stronglyConnectedNode := data.stack[i]
+		stackIndex := data.index[stronglyConnectedNode]
+		data.nodes[stackIndex].stacked = false
+		nodes = append(nodes, stronglyConnectedNode)
+		if stackIndex == index {
+			break
+		}
+		i--
+	}
+	data.stack = data.stack[:i]
+	data.output = append(data.output, nodes)
 }

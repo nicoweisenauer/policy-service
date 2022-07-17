@@ -2,14 +2,13 @@ package policy
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"nweisenauer/dag"
 )
 
-func ProcessPolicy(policy []byte) ([]byte, error) {
+func BuildPolicy(jsonRules []byte) ([]byte, error) {
 	var rules RuleSet
-	err := json.Unmarshal(policy, &rules)
+	err := json.Unmarshal(jsonRules, &rules)
 
 	if err != nil {
 		log.Println(err)
@@ -23,8 +22,8 @@ func ProcessPolicy(policy []byte) ([]byte, error) {
 		return make([]byte, 0), err
 	}
 
-	responseRules := convertToResponseRuleFormat(sortedRuleIds, rules)
-	result, err := json.MarshalIndent(responseRules, "", "    ")
+	policy := convertSortedRuleSetToPolicy(sortedRuleIds, rules)
+	result, err := json.MarshalIndent(policy, "", "    ")
 
 	if err != nil {
 		log.Println(err)
@@ -34,7 +33,7 @@ func ProcessPolicy(policy []byte) ([]byte, error) {
 }
 
 func sortRuleIds(rules RuleSet) ([]string, error) {
-	graph := convertRuleSetToGraphRepresentation(rules)
+	graph := convertRuleSetToGraph(rules)
 	result, err := dag.TopologicalSort(graph)
 	sortedRuleIds := make([]string, 0)
 
@@ -43,8 +42,6 @@ func sortRuleIds(rules RuleSet) ([]string, error) {
 		return sortedRuleIds, err
 	}
 
-	fmt.Println(result)
-
 	for _, ruleIdSlice := range result {
 		sortedRuleIds = append(sortedRuleIds, ruleIdSlice[0])
 	}
@@ -52,8 +49,8 @@ func sortRuleIds(rules RuleSet) ([]string, error) {
 	return sortedRuleIds, nil
 }
 
-func convertRuleSetToGraphRepresentation(rules RuleSet) map[string][]string {
-	graph := make(map[string][]string, len(rules.Rules))
+func convertRuleSetToGraph(rules RuleSet) dag.Graph {
+	graph := make(dag.Graph, len(rules.Rules))
 
 	for _, rule := range rules.Rules {
 		graph[rule.Id] = make([]string, 0)
@@ -65,13 +62,13 @@ func convertRuleSetToGraphRepresentation(rules RuleSet) map[string][]string {
 	return graph
 }
 
-func convertToResponseRuleFormat(sortedRuleIds []string, rules RuleSet) []ResultRule {
-	responseRules := make([]ResultRule, len(sortedRuleIds))
+func convertSortedRuleSetToPolicy(sortedRuleIds []string, rules RuleSet) Policy {
+	policy := make(Policy, len(sortedRuleIds))
 
 	for i, ruleId := range sortedRuleIds {
 		for _, rule := range rules.Rules {
 			if rule.Id == ruleId {
-				responseRules[i] = ResultRule{
+				policy[i] = PolicyRule{
 					Id:   rule.Id,
 					Head: rule.Head,
 					Body: rule.Body,
@@ -80,5 +77,5 @@ func convertToResponseRuleFormat(sortedRuleIds []string, rules RuleSet) []Result
 		}
 	}
 
-	return responseRules
+	return policy
 }

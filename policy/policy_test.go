@@ -41,19 +41,19 @@ var request = []byte(`
 }`)
 
 func TestProcessPolicyReturnsValidJSON(t *testing.T) {
-	result, err := ProcessPolicy(request)
+	result, err := BuildPolicy(request)
 	if !json.Valid(result) || err != nil {
 		t.Fatalf(`TestMainReturnsValidJSON: %q, %v, no valid JSON`, result, err)
 	}
 }
 
 func TestProcessPolicyReturnsAllRules(t *testing.T) {
-	result, err := ProcessPolicy(request)
+	result, err := BuildPolicy(request)
 	if err != nil {
 		t.Fatalf(`TestMainReturnsAllRules: %q, %v, no valid JSON`, result, err)
 	}
 
-	var rules []ResultRule
+	var rules Policy
 	err = json.Unmarshal(result, &rules)
 
 	for _, id := range []string{"rule-1", "rule-2", "rule-3", "rule-4"} {
@@ -99,12 +99,12 @@ func TestProcessPolicySortsRules(t *testing.T) {
 		}
 	]`)
 
-	result, err := ProcessPolicy(request)
+	result, err := BuildPolicy(request)
 	if err != nil {
 		t.Fatalf(`TestMainReturnsAllRules: %q, %v, no valid JSON`, result, err)
 	}
 
-	var expectedRules []ResultRule
+	var expectedRules Policy
 	err = json.Unmarshal(expected, &expectedRules)
 	expectedRulesJSON, _ := json.MarshalIndent(expectedRules, "", "    ")
 
@@ -132,7 +132,7 @@ func TestProcessPolicyDetectsCyclicDependencies(t *testing.T) {
 		]
 	}`)
 
-	result, err := ProcessPolicy(cyclicRequest)
+	result, err := BuildPolicy(cyclicRequest)
 
 	if len(result) != 0 {
 		t.Fatalf(`TestProcessPolicySortsRules: result should be empty, but is %q`, string(result))
