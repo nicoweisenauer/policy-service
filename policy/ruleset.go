@@ -12,7 +12,7 @@ type Rule struct {
 }
 
 type ResultRule struct {
-	Id   string `json:"id"`
-	Head string `json:"head"`
-	Body string `json:"body"`
+	Id   string `json:"id,omitempty"`
+	Head string `json:"head,omitempty"`
+	Body string `json:"body,omitempty"`
 }

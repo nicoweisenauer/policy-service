@@ -1,8 +1,7 @@
 [
     {
         "id": "rule-1",
-        "head": "default allow = false",
-        "body": ""
+        "head": "default allow = false"
     },
     {
         "id": "rule-3",

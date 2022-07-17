@@ -106,23 +106,10 @@ func TestProcessPolicySortsRules(t *testing.T) {
 
 	var expectedRules []ResultRule
 	err = json.Unmarshal(expected, &expectedRules)
+	expectedRulesJSON, _ := json.MarshalIndent(expectedRules, "", "    ")
 
-	var resultRules []ResultRule
-	err = json.Unmarshal(result, &resultRules)
-	if (len(resultRules) != 4) || err != nil {
-		t.Fatalf(`TestProcessPolicySortsRules: result length is not correct`)
-	}
-	if !(expectedRules[0] == resultRules[0]) {
-		t.Fatalf(`TestProcessPolicySortsRules: %q, want match for %#q`, expectedRules[0], resultRules[0])
-	}
-	if !(expectedRules[1] == resultRules[1]) {
-		t.Fatalf(`TestProcessPolicySortsRules: %q, want match for %#q`, expectedRules[1], resultRules[1])
-	}
-	if !(expectedRules[2] == resultRules[2]) {
-		t.Fatalf(`TestProcessPolicySortsRules: %q, want match for %#q`, expectedRules[2], resultRules[2])
-	}
-	if !(expectedRules[3] == resultRules[3]) {
-		t.Fatalf(`TestProcessPolicySortsRules: %q, want match for %#q`, expectedRules[3], resultRules[4])
+	if (string(result) != string(expectedRulesJSON)) || err != nil {
+		t.Fatalf(`TestProcessPolicySortsRules: result json does not match expected json, result: %q`, string(result))
 	}
 }
 
