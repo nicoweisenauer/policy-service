@@ -4,6 +4,7 @@ import (
 	"errors"
 )
 
+// a topological ordering represents a valid sequence for tasks (nodes) which depend on each other (edges between nodes)
 func TopologicalSort(graph map[string][]string) ([][]string, error) {
 	sccSlice := tarjans(graph)
 	isDAG := assertDAG(sccSlice, len(graph))
@@ -15,6 +16,7 @@ func TopologicalSort(graph map[string][]string) ([][]string, error) {
 	return sccSlice, nil
 }
 
+// a DAG does not contain cycles, which means that every SCC (strongly connected component) consists of a single node
 func assertDAG(sccSlice [][]string, nodeCount int) bool {
 	if len(sccSlice) != nodeCount {
 		return false
@@ -29,7 +31,8 @@ func assertDAG(sccSlice [][]string, nodeCount int) bool {
 	return true
 }
 
-// Connections creates a slice where each item is a slice of strongly connected nodes
+// See: https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
+// Tarjan's creates a slice where each item is a slice of strongly connected nodes
 // If a slice item contains only one node there are no cycles. A cycle on the node itself is also a connected group.
 func tarjans(graph map[string][]string) [][]string {
 	context := &data{
@@ -60,7 +63,7 @@ type node struct {
 	stacked bool
 }
 
-// strongConnect runs Tarjan's algorithm recursively and outputs a grouping of strongly connected nodes
+// strongConnect runs recursively and outputs a grouping of strongly connected nodes
 func (data *data) strongConnect(currentNode string) *node {
 	index := len(data.nodes)
 	data.index[currentNode] = index
