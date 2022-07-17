@@ -1,4 +1,4 @@
-package main
+package policy
 
 type RuleSet struct {
 	Rules []struct {
